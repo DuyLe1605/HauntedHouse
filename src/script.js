@@ -16,11 +16,198 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
+ * Texture
+ */
+const textureLoader = new THREE.TextureLoader();
+
+// Floor
+const floorAlphaTexture = textureLoader.load("floor/alpha.jpg");
+const floorColorTexture = textureLoader.load("./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_diff_1k.jpg");
+const floorARMTexture = textureLoader.load("./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_arm_1k.png");
+const floorNormalTexture = textureLoader.load(
+    "./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_nor_gl_1k.png"
+);
+const floorDisplacementTexture = textureLoader.load(
+    "./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_disp_1k.jpg"
+);
+
+floorColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+floorColorTexture.repeat.set(8, 8);
+floorARMTexture.repeat.set(8, 8);
+floorNormalTexture.repeat.set(8, 8);
+floorDisplacementTexture.repeat.set(8, 8);
+
+floorColorTexture.wrapS = THREE.RepeatWrapping;
+floorARMTexture.wrapS = THREE.RepeatWrapping;
+floorNormalTexture.wrapS = THREE.RepeatWrapping;
+floorDisplacementTexture.wrapS = THREE.RepeatWrapping;
+
+floorColorTexture.wrapT = THREE.RepeatWrapping;
+floorARMTexture.wrapT = THREE.RepeatWrapping;
+floorNormalTexture.wrapT = THREE.RepeatWrapping;
+floorDisplacementTexture.wrapT = THREE.RepeatWrapping;
+
+// Walls
+const wallColorTexture = textureLoader.load(
+    "./wall/red_brick_plaster_patch_02_1k/textures/red_brick_plaster_patch_02_diff_1k.jpg"
+);
+const wallARMTexture = textureLoader.load(
+    "./wall/red_brick_plaster_patch_02_1k/textures/red_brick_plaster_patch_02_arm_1k.png"
+);
+const wallNormalTexture = textureLoader.load(
+    "./wall/red_brick_plaster_patch_02_1k/textures/red_brick_plaster_patch_02_nor_gl_1k.png"
+);
+
+wallColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+// Roof
+const roofColorTexture = textureLoader.load("./roof/roof_slates_02_1k/roof_slates_02_diff_1k.jpg");
+const roofARMTexture = textureLoader.load("./roof/roof_slates_02_1k/roof_slates_02_arm_1k.jpg");
+const roofNormalTexture = textureLoader.load("./roof/roof_slates_02_1k/roof_slates_02_nor_gl_1k.jpg");
+
+roofColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+roofColorTexture.repeat.set(2, 1);
+roofARMTexture.repeat.set(2, 1);
+roofNormalTexture.repeat.set(2, 1);
+
+roofColorTexture.wrapS = THREE.RepeatWrapping;
+roofARMTexture.wrapS = THREE.RepeatWrapping;
+roofNormalTexture.wrapS = THREE.RepeatWrapping;
+
+roofColorTexture.wrapT = THREE.RepeatWrapping;
+roofARMTexture.wrapT = THREE.RepeatWrapping;
+roofNormalTexture.wrapT = THREE.RepeatWrapping;
+
+roofColorTexture.rotation = 3.03;
+roofARMTexture.rotation = 3.03;
+roofNormalTexture.rotation = 3.03;
+gui.add(roofColorTexture, "rotation")
+    .min(0)
+    .max(Math.PI * 2)
+    .step(0.01)
+    .name("Roof Rotation");
+
+// Door
+const doorNormalTexture = textureLoader.load("door/color.jpg");
+doorNormalTexture.colorSpace = THREE.SRGBColorSpace;
+
+/**
  * House
  */
-// Temporary sphere
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), new THREE.MeshStandardMaterial({ roughness: 0.7 }));
-scene.add(sphere);
+// Floor
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20, 100, 100),
+    new THREE.MeshStandardMaterial({
+        alphaMap: floorAlphaTexture,
+        transparent: true,
+        map: floorColorTexture,
+        aoMap: floorARMTexture,
+        metalnessMap: floorARMTexture,
+        roughnessMap: floorARMTexture,
+        normalMap: floorNormalTexture,
+        displacementMap: floorDisplacementTexture,
+        displacementScale: 0.3,
+        displacementBias: -0.1,
+    })
+);
+scene.add(floor);
+floor.rotateX(-Math.PI * 0.5);
+
+gui.add(floor.material, "displacementScale").min(0).max(1).step(0.001);
+gui.add(floor.material, "displacementBias").min(-1).max(1).step(0.001);
+
+// House Container
+const house = new THREE.Group();
+scene.add(house);
+
+// Walls
+const walls = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 2.5, 4),
+    new THREE.MeshStandardMaterial({
+        map: wallColorTexture,
+        aoMap: wallARMTexture,
+        metalnessMap: wallARMTexture,
+        roughnessMap: wallARMTexture,
+        normalMap: wallNormalTexture,
+    })
+);
+house.add(walls);
+walls.position.y += 2.5 / 2;
+
+// Roof
+const roof = new THREE.Mesh(
+    new THREE.ConeGeometry(3.5, 1.5, 4),
+    new THREE.MeshStandardMaterial({
+        map: roofColorTexture,
+        aoMap: roofARMTexture,
+        metalnessMap: roofARMTexture,
+        roughnessMap: roofARMTexture,
+        normalMap: roofNormalTexture,
+    })
+);
+house.add(roof);
+roof.rotateY(Math.PI * 0.25);
+roof.position.y = 1.5 / 2 + 2.5;
+
+// Door
+const door = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 2.2),
+    new THREE.MeshStandardMaterial({ map: doorNormalTexture })
+);
+house.add(door);
+door.position.y = 2.2 / 2;
+door.position.z = 4 / 2 + 0.01; // Để tránh z fighting
+
+//Bushes
+const bushGeometry = new THREE.SphereGeometry(1, 16, 16);
+const bushMaterial = new THREE.MeshStandardMaterial();
+const bush1 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush1.scale.set(0.5, 0.5, 0.5);
+bush1.position.set(0.8, 0.2, 2.2);
+
+const bush2 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush2.scale.set(0.25, 0.25, 0.25);
+bush2.position.set(1.4, 0.1, 2.1);
+
+const bush3 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush3.scale.set(0.4, 0.4, 0.4);
+bush3.position.set(-0.8, 0.1, 2.2);
+
+const bush4 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush4.scale.set(0.15, 0.15, 0.15);
+bush4.position.set(-1, 0.05, 2.6);
+house.add(bush1, bush2, bush3, bush4);
+
+// Graves
+const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2);
+const graveMaterial = new THREE.MeshStandardMaterial();
+
+const graves = new THREE.Group();
+scene.add(graves);
+
+for (let i = 0; i < 30; i++) {
+    // Mesh
+    const grave = new THREE.Mesh(graveGeometry, graveMaterial);
+
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 3 + Math.random() * 4;
+
+    const x = Math.sin(angle) * radius;
+    const z = Math.cos(angle) * radius;
+
+    // position
+    grave.position.x = x;
+    grave.position.y = Math.random() * 0.4;
+    grave.position.z = z;
+    // rotation
+    grave.rotateX(Math.random() - 0.5) * 0.4;
+    grave.rotateY(Math.random() - 0.5) * 0.4;
+    grave.rotateZ(Math.random() - 0.5) * 0.4;
+
+    graves.add(grave);
+}
 
 /**
  * Lights

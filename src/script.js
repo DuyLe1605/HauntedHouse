@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Timer } from "three/addons/misc/Timer.js";
+import { Sky } from "three/addons/objects/Sky.js";
 import GUI from "lil-gui";
 
 /**
@@ -9,6 +10,43 @@ import GUI from "lil-gui";
 // Debug
 const gui = new GUI();
 
+/**
+ * Loading bar
+ */
+const loadingBarElement = document.createElement("div");
+loadingBarElement.style.position = "fixed";
+loadingBarElement.style.top = "50%";
+loadingBarElement.style.left = "50%";
+loadingBarElement.style.transform = "translate(-50%, -50%)";
+loadingBarElement.style.width = "300px";
+loadingBarElement.style.height = "30px";
+loadingBarElement.style.border = "2px solid white";
+loadingBarElement.style.background = "rgba(0,0,0,0.5)";
+loadingBarElement.style.zIndex = "100";
+document.body.appendChild(loadingBarElement);
+
+const progressElement = document.createElement("div");
+progressElement.style.height = "100%";
+progressElement.style.width = "0%";
+progressElement.style.background = "#4caf50";
+loadingBarElement.appendChild(progressElement);
+
+/**
+ * Loading manager
+ */
+const loadingManager = new THREE.LoadingManager(
+    // onLoad
+    () => {
+        loadingBarElement.style.display = "none"; // Ẩn khi load xong
+    },
+
+    // onProgress
+    (url, itemsLoaded, itemsTotal) => {
+        const progress = (itemsLoaded / itemsTotal) * 100;
+        progressElement.style.width = progress + "%";
+    }
+);
+
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
@@ -16,18 +54,33 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
+ * Sky
+ */
+const sky = new Sky();
+
+sky.material.uniforms["turbidity"].value = 10;
+sky.material.uniforms["rayleigh.value"] = 3;
+sky.material.uniforms["mieCoefficient"].value = 0.3;
+sky.material.uniforms["mieDirectionalG"].value = 0.95;
+sky.material.uniforms["sunPosition"].value.set(0.3, -0, -0.95);
+
+sky.scale.set(100, 100, 100);
+scene.add(sky);
+
+/**
+ * Fog
+ */
+scene.fog = new THREE.FogExp2("#04343f", 0.1);
+
+/**
  * Texture
  */
-const textureLoader = new THREE.TextureLoader();
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 // Floor
 const floorAlphaTexture = textureLoader.load("floor/alpha.jpg");
-const floorColorTexture = textureLoader.load(
-    "./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_diff_1k.jpg"
-);
-const floorARMTexture = textureLoader.load(
-    "./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_arm_1k.png"
-);
+const floorColorTexture = textureLoader.load("./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_diff_1k.jpg");
+const floorARMTexture = textureLoader.load("./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_arm_1k.png");
 const floorNormalTexture = textureLoader.load(
     "./floor/brown_mud_leaves_01_1k/textures/brown_mud_leaves_01_nor_gl_1k.png"
 );
@@ -66,15 +119,9 @@ const wallNormalTexture = textureLoader.load(
 wallColorTexture.colorSpace = THREE.SRGBColorSpace;
 
 // Roof
-const roofColorTexture = textureLoader.load(
-    "./roof/roof_slates_02_1k/roof_slates_02_diff_1k.jpg"
-);
-const roofARMTexture = textureLoader.load(
-    "./roof/roof_slates_02_1k/roof_slates_02_arm_1k.jpg"
-);
-const roofNormalTexture = textureLoader.load(
-    "./roof/roof_slates_02_1k/roof_slates_02_nor_gl_1k.jpg"
-);
+const roofColorTexture = textureLoader.load("./roof/roof_slates_02_1k/roof_slates_02_diff_1k.jpg");
+const roofARMTexture = textureLoader.load("./roof/roof_slates_02_1k/roof_slates_02_arm_1k.jpg");
+const roofNormalTexture = textureLoader.load("./roof/roof_slates_02_1k/roof_slates_02_nor_gl_1k.jpg");
 
 roofColorTexture.colorSpace = THREE.SRGBColorSpace;
 
@@ -100,36 +147,22 @@ gui.add(roofColorTexture, "rotation")
     .name("Roof Rotation");
 
 // Bushes
-const bushColorTexture = textureLoader.load(
-    "./bush/leaves_forest_ground_1k/leaves_forest_ground_diff_1k.jpg"
-);
-const bushARMTexture = textureLoader.load(
-    "./bush/leaves_forest_ground_1k/leaves_forest_ground_arm_1k.jpg"
-);
-const bushNormalTexture = textureLoader.load(
-    "./bush/leaves_forest_ground_1k/leaves_forest_ground_nor_gl_1k.jpg"
-);
+const bushColorTexture = textureLoader.load("./bush/leaves_forest_ground_1k/leaves_forest_ground_diff_1k.jpg");
+const bushARMTexture = textureLoader.load("./bush/leaves_forest_ground_1k/leaves_forest_ground_arm_1k.jpg");
+const bushNormalTexture = textureLoader.load("./bush/leaves_forest_ground_1k/leaves_forest_ground_nor_gl_1k.jpg");
 bushColorTexture.colorSpace = THREE.SRGBColorSpace;
 
 // Graves
-const graveColorTexture = textureLoader.load(
-    "./grave/plastered_stone_wall_1k/plastered_stone_wall_diff_1k.jpg"
-);
-const graveARMTexture = textureLoader.load(
-    "./grave/plastered_stone_wall_1k/plastered_stone_wall_arm_1k.jpg"
-);
-const graveNormalTexture = textureLoader.load(
-    "./grave/plastered_stone_wall_1k/plastered_stone_wall_nor_gl_1k.jpg"
-);
+const graveColorTexture = textureLoader.load("./grave/plastered_stone_wall_1k/plastered_stone_wall_diff_1k.jpg");
+const graveARMTexture = textureLoader.load("./grave/plastered_stone_wall_1k/plastered_stone_wall_arm_1k.jpg");
+const graveNormalTexture = textureLoader.load("./grave/plastered_stone_wall_1k/plastered_stone_wall_nor_gl_1k.jpg");
 graveColorTexture.colorSpace = THREE.SRGBColorSpace;
 
 // Door
 // Door
 const doorColorTexture = textureLoader.load("./door/color.jpg");
 const doorAlphaTexture = textureLoader.load("./door/alpha.jpg");
-const doorAmbientOcclusionTexture = textureLoader.load(
-    "./door/ambientOcclusion.jpg"
-);
+const doorAmbientOcclusionTexture = textureLoader.load("./door/ambientOcclusion.jpg");
 const doorHeightTexture = textureLoader.load("./door/height.jpg");
 const doorNormalTexture = textureLoader.load("./door/normal.jpg");
 const doorMetalnessTexture = textureLoader.load("./door/metalness.jpg");
@@ -335,12 +368,7 @@ window.addEventListener("resize", () => {
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(
-    75,
-    sizes.width / sizes.height,
-    0.1,
-    100
-);
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 4;
 camera.position.y = 2;
 camera.position.z = 5;
@@ -402,26 +430,17 @@ const tick = () => {
     const ghost1Angle = elapsedTime * 0.5;
     ghost1.position.x = Math.cos(ghost1Angle) * 4;
     ghost1.position.z = Math.sin(ghost1Angle) * 4;
-    ghost1.position.y =
-        Math.sin(ghost1Angle) *
-        Math.sin(ghost1Angle * 2.34) *
-        Math.sin(ghost1Angle * 3.45);
+    ghost1.position.y = Math.sin(ghost1Angle) * Math.sin(ghost1Angle * 2.34) * Math.sin(ghost1Angle * 3.45);
 
     const ghost2Angle = -elapsedTime * 0.38;
     ghost2.position.x = Math.cos(ghost2Angle) * 5;
     ghost2.position.z = Math.sin(ghost2Angle) * 5;
-    ghost2.position.y =
-        Math.sin(ghost2Angle) *
-        Math.sin(ghost2Angle * 2.34) *
-        Math.sin(ghost2Angle * 3.45);
+    ghost2.position.y = Math.sin(ghost2Angle) * Math.sin(ghost2Angle * 2.34) * Math.sin(ghost2Angle * 3.45);
 
     const ghost3Angle = elapsedTime * 0.23;
     ghost3.position.x = Math.cos(ghost3Angle) * 6;
     ghost3.position.z = Math.sin(ghost3Angle) * 6;
-    ghost3.position.y =
-        Math.sin(ghost3Angle) *
-        Math.sin(ghost3Angle * 2.34) *
-        Math.sin(ghost3Angle * 3.45);
+    ghost3.position.y = Math.sin(ghost3Angle) * Math.sin(ghost3Angle * 2.34) * Math.sin(ghost3Angle * 3.45);
 
     // Update controls
     controls.update();

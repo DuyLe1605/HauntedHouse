@@ -140,11 +140,6 @@ roofNormalTexture.wrapT = THREE.RepeatWrapping;
 roofColorTexture.rotation = 3.03;
 roofARMTexture.rotation = 3.03;
 roofNormalTexture.rotation = 3.03;
-gui.add(roofColorTexture, "rotation")
-    .min(0)
-    .max(Math.PI * 2)
-    .step(0.01)
-    .name("Roof Rotation");
 
 // Bushes
 const bushColorTexture = textureLoader.load("./bush/leaves_forest_ground_1k/leaves_forest_ground_diff_1k.jpg");
@@ -191,9 +186,6 @@ const floor = new THREE.Mesh(
 );
 scene.add(floor);
 floor.rotateX(-Math.PI * 0.5);
-
-gui.add(floor.material, "displacementScale").min(0).max(1).step(0.001);
-gui.add(floor.material, "displacementBias").min(-1).max(1).step(0.001);
 
 // House Container
 const house = new THREE.Group();
